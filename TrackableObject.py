@@ -22,5 +22,5 @@ class TrackableObject:
 
         distance = abs(y1 - y2)                             # Get the first centroid and last centroid and update speed.
         if distance > 0:
-            self.speed = (self.currentFrame - self.frameSt)/distance
+            self.speed = (((self.currentFrame - self.frameSt)*0.033)/(distance*0.05))*3.6        # Number of pixels moved in a frame,
         return self.speed

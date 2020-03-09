@@ -166,6 +166,11 @@ def main():
 		key = cv.waitKey(20)
 		if key == 27:
 			break
+		if key == ord('n'):
+			while True:
+				key = cv.waitKey(20)
+				if key == ord('n'):
+					break
 
 aNumber = 0
 main()
