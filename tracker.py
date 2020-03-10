@@ -27,7 +27,7 @@ def draw_info(image, boxes, centroids, countUp, countDown, trackableObjects,fram
 
 	# Draw lines
 	# cv.line(image, (0, 340), (640, 340), (255, 1, 255), 2)
-	cv.line(image, (0, 200), (640, 200), (255, 1, 255), 2)
+	cv.line(image, (0, 250), (640, 250), (255, 1, 255), 2)
 
 	# Draw on counts
 	textUp = "Up {}".format(countUp)
@@ -42,7 +42,7 @@ def draw_info(image, boxes, centroids, countUp, countDown, trackableObjects,fram
 			x = center[0]
 			y = center[1]
 			textSpeed = "{:4.2f}".format(track.speed)
-			cv.putText(image, textSpeed, (x-10,y+20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (20, 112, 250), 2)
+			# cv.putText(image, textSpeed, (x-10,y+20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (20, 112, 250), 2)
 
 	# Draw the number of frames
 	cv.putText(image, "Frame: {}".format(frameCount), (280, 30),cv.FONT_HERSHEY_SIMPLEX, 0.5, (224, 9, 52, 2))
@@ -74,7 +74,7 @@ def update_tracks(objects, trackableObjects, h, countUp, countDown, frameCount, 
 			y = [c[1] for c in trackObj.centroids]			# Look at difference between y-coord of current centroid and mean of previous centroids.
 			direction = centroid[1] - np.mean(y)			# Get the difference.
 			trackObj.centroids.append(centroid)				# Assign the current centroid to the trackable objects history of centroids.
-			thresh = h//2
+			thresh = 250
 			if not trackObj.counted : 						# If the object hasn't been counted
 				if direction < 0 and centroid[1] < thresh:	# If direction is up.
 					countUp += 1
@@ -130,6 +130,7 @@ def main():
 	areaThresh = h*w/500												# Approximate the smallest contour size in the ROI.
 	kernel_open = cv.getStructuringElement(cv.MORPH_RECT, (3,3)) 		# Create a opening kernel
 	kernel_close = cv.getStructuringElement(cv.MORPH_RECT, (17,17)) 	# Create a closing kernel
+	kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2)) 			# General purpose kernel.
 
 	frameCount = 0														# Count number of frames
 	countUp = 0															# Count of objects moving up
@@ -142,13 +143,15 @@ def main():
 
 		_, frame = capture.read()										# Read out a frame of the input video.
 		mask = subtractor.apply(frame)									# Apply the subtractor trackObj the frame of the image trackObj get the foreground.
-		ret, mask = cv.threshold(mask, 200, 255, cv.THRESH_BINARY)		# Threshold the foreground mask trackObj remove shadows.
+		# ret, mask = cv.threshold(mask, 200, 255, cv.THRESH_BINARY)		# Threshold the foreground mask trackObj remove shadows.
+		mask[mask < 240] = 0
 		mask = cv.medianBlur(mask,5)									# Apply median blur filter trackObj remove salt and pepper noise.
 
-		cv.morphologyEx(mask, cv.MORPH_OPEN, kernel_open)				# Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
-		cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel_close)				# Apply a closing trackObj join trackObjgether the surviving foreground blobs.
+		mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel)				# Apply a closing trackObj join trackObjgether the surviving foreground blobs.
+		mask = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)				# Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
+		mask = cv.dilate(mask, kernel, iterations=2)					# Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
 
-		contours, _ = cv.findContours(mask, cv.RETR_CCOMP,
+		contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL,
 									  cv.CHAIN_APPROX_NONE)										# Look for contours in the foreground mask. EXPLAIN PARAMETERS USED.
 
 		threshedConts = []												# Instantiate an empty list that will hold contours that meet the threshold

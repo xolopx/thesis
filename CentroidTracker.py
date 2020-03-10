@@ -5,11 +5,12 @@ import numpy as np
 
 class CentroidTracker:
     """ This is the constructor."""
-    def __init__(self, maxDisappeared=100):
+    def __init__(self, maxDisappeared=100, maxDistance=50):
         self.nextObjectID = 0                       # Counter for object IDs
         self.objects = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
         self.disappeared = OrderedDict()            # Centroids that are missing. Key: Unique ID, Value: # frames centroid has disappeared for.
         self.maxDisappeared = maxDisappeared        # Number of frames a centroid can go missing for before being removed.
+        self.maxDistance = maxDistance              # The maximum distance a centroid can reappear from it's previous and still be associated.
     """ Registers a new centroid to be tracked."""
     def register(self, centroid):
         self.objects[self.nextObjectID] = centroid  # Next available unique ID is used for new centroid index in object list.
@@ -71,11 +72,15 @@ class CentroidTracker:
                 # Ignore prexamined tuples
                 if row in usedRows or col in usedCols:
                     continue
-                # For uneximaned tuple
+                # For unexamined tuple
                 objectID = objectIDs[row]                               # Get old centroid's objectID.
-                self.objects[objectID] = inputCentroids[col]            # Set the old centroid's new location to be the closest new centroid.
-                self.disappeared[objectID] = 0                          # Reset the centroid's disappeared value as its location has been updated.
-
+                distancio = D[row][col]
+                if D[row][col] < self.maxDistance:                      # if the distance of the nearest centroid is satisfies distance thresh.
+                    self.objects[objectID] = inputCentroids[col]        # Set the old centroid's new location to be the closest new centroid.
+                    self.disappeared[objectID] = 0                      # Reset the centroid's disappeared value as its location has been updated.
+                else:
+                    self.deregister(objectID)                           # If the centoid is too far away deregister.
+                    deregisteredID.append(objectID)                     # Append the deregistered ID to list to give to trackers, to mark tracker as deregistered.
                 # Set the used row and col so they aren't assigned again.
                 usedRows.add(row)
                 usedCols.add(col)
