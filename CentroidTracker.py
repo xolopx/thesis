@@ -5,7 +5,7 @@ import numpy as np
 
 class CentroidTracker:
     """ This is the constructor."""
-    def __init__(self, maxDisappeared=1):
+    def __init__(self, maxDisappeared=100):
         self.nextObjectID = 0                       # Counter for object IDs
         self.objects = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
         self.disappeared = OrderedDict()            # Centroids that are missing. Key: Unique ID, Value: # frames centroid has disappeared for.

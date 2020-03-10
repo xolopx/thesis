@@ -95,17 +95,39 @@ def update_tracks(objects, trackableObjects, h, countUp, countDown, frameCount, 
 	return countUp, countDown
 
 
+def train_bg_subtractor(subtractor, cap, num=500):
+	"""
+
+	:param subtractor: The subtractor instance.
+	:param cap: The input video stream.
+	:param num:	NUmber of frames to be used on the model.
+	:return:
+	"""
+
+	i = 0
+	while i < num:
+		_, frame = cap.read()
+		subtractor.apply(frame, None, 0.001)
+		i += 1
+
+
 def main():
 
 	""" SETUP """
-	subtractor = cv.createBackgroundSubtractorMOG2(detectShadows=True) 	# Keeping shadows and threshing them out later.
-	capture = cv.VideoCapture("traffic3.mp4")							# Open the input file.
+	subtractor = cv.createBackgroundSubtractorMOG2(history=500, detectShadows=True) 	# Keeping shadows and threshing them out later.
+	try:
+		capture = cv.VideoCapture("/home/tom/Desktop/pycharm_projects/tracker/traffic3.mp4")							# Open the input file.
+
+	except FileNotFoundError:
+		print("Could not find video")
+
+	train_bg_subtractor(subtractor,capture,num=500)
 	ct = CentroidTracker.CentroidTracker()								# Create the centroid tracking object.
 	trackableObjects = {}												# Dictionary of objects being tracked.
 
 	w = capture.get(3)													# Get the width of the frames.
 	h = capture.get(4)													# Get the height of the frames
-	areaThresh = h*w/400												# Approximate the smallest contour size in the ROI.
+	areaThresh = h*w/500												# Approximate the smallest contour size in the ROI.
 	kernel_open = cv.getStructuringElement(cv.MORPH_RECT, (3,3)) 		# Create a opening kernel
 	kernel_close = cv.getStructuringElement(cv.MORPH_RECT, (17,17)) 	# Create a closing kernel
 
@@ -127,7 +149,7 @@ def main():
 		cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel_close)				# Apply a closing trackObj join trackObjgether the surviving foreground blobs.
 
 		contours, _ = cv.findContours(mask, cv.RETR_CCOMP,
-			cv.CHAIN_APPROX_NONE)										# Look for contours in the foreground mask. EXPLAIN PARAMETERS USED.
+									  cv.CHAIN_APPROX_NONE)										# Look for contours in the foreground mask. EXPLAIN PARAMETERS USED.
 
 		threshedConts = []												# Instantiate an empty list that will hold contours that meet the threshold
 		for i in range(len(contours)):			 						# Delete contours that have a smallest area than the threshold.
