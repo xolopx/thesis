@@ -4,30 +4,40 @@ import numpy as np
 
 
 class CentroidTracker:
-    """ This is the constructor."""
-    def __init__(self, maxDisappeared=100, maxDistance=100):
+
+    def __init__(self, maxDisappeared=10, maxDistance=100, minDistance=50):
+        """
+        :param maxDisappeared: Maximum number of frame a centroid can disappear for before being deregistered.
+        :param maxDistance: Maximum distance a centroid can reappear and still be associated with its nearest centroid.
+        :param minDistance: Minimum distance a centroid can be to another without getting associated with that centroid.
+        """
         self.nextObjectID = 0                       # Counter for object IDs
         self.objects = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
         self.disappeared = OrderedDict()            # Centroids that are missing. Key: Unique ID, Value: # frames centroid has disappeared for.
         self.maxDisappeared = maxDisappeared        # Number of frames a centroid can go missing for before being removed.
         self.maxDistance = maxDistance              # The maximum distance a centroid can reappear from it's previous and still be associated.
-    """ Registers a new centroid to be tracked."""
+        self.minDistance = minDistance              # Min distance a centroid can appear near other centroid and not be associated with it.
+
     def register(self, centroid):
+        """ Registers a new centroid to be tracked."""
         self.objects[self.nextObjectID] = centroid  # Next available unique ID is used for new centroid index in object list.
         self.disappeared[self.nextObjectID] = 0     # Initially the number of times the centroid has disappeared is 0.
         self.nextObjectID += 1                      # Increment the object ID counter.
-    """ Reregisters a centroid from the tracked list."""
+
     def deregister(self, objectID):
+        """ Reregisters a centroid from the tracked list."""
         del self.objects[objectID]                  # Use objecID to index centroid and remove from list.
         del self.disappeared[objectID]              # Use objecID to index centroid and remove from list.
-    """ Checks bounding box state against centroids state. 
+
+    def update(self, rects):
+        """
+        Checks bounding box state against centroids state.
         @Params:
             rects - list of bounding boxes (startX, startY, endX, endY)
-            
+
         @Returns:
-            Updated list of centroids. 
-    """
-    def update(self, rects):
+            Updated list of centroids.
+        """
         deregisteredID = []                                             # List of deregistered centroids. Will be refreshed for every frame.
 
         if len(rects) == 0:                                             # Check to see if the list of bounding boxes is empty.
@@ -46,10 +56,18 @@ class CentroidTracker:
             inputCentroids[i] = (cX, cY)
 
         if len(self.objects) == 0:                                      # If the number of existing centroids is zero.
-            # 1. Get distance between all new centroids.
-            # 2. If their are any centroids that are within threshold of closeness, combine them into one entity.
-                # 2a. Determine which centroid to use as the base, somehow.
-                # 2b. Remove the discarded centroid from input list.
+
+            inputCentroidsD = dist.cdist(
+                np.array(inputCentroids), inputCentroids)               # Calculate distances between all new centroids.
+            dim = np.shape(inputCentroids)                              # Get dimensions of distance matrix. NB:It's square.
+
+            for row in range(dim[0]):
+                for col in range(dim[0]):                               # Cycle through pairs.
+                    if ((inputCentroidsD[row][col] < self.minDistance)  # If pair is sufficiently close together, combine.
+                            and (row != col)):                          # Centroid to itself is 0, so ignore these scenarios.
+                        print("Merged input centroids\n")
+                        np.delete(inputCentroids, col, axis=0)          # Delete row for that centroid. Array is vertical list of points: (x,y).
+
 
             for i in range(0, len(inputCentroids)):                     # Register all centroids as new.
                 self.register(inputCentroids[i])
@@ -74,26 +92,20 @@ class CentroidTracker:
                 if row in usedRows or col in usedCols:                  # Skip an existing or new centroid if it has already been used.
                     continue
 
-                """ DEBUG """
                 objectID = objectIDs[row]                               # Get old centroid's objectID.
 
-                distancio = D[row][col]                                 # DEBUG: get distance between pair.
-                print("Centroid {0} found {1:5.2f} away".format(objectID, distancio))
-
-
-                if D[row][
-                    col] < self.maxDistance:                      # if the distance of the nearest centroid is satisfies distance thresh.
+                if D[row][col] < self.maxDistance:                      # If the distance of the nearest centroid is satisfies distance thresh.
                     self.objects[objectID] = inputCentroids[col]        # Set the old centroid's new location to be the closest new centroid.
                     self.disappeared[objectID] = 0                      # Reset the centroid's disappeared value as its location has been updated.
                 else:
                     self.deregister(objectID)                           # If the centoid is too far away deregister.
                     deregisteredID.append(objectID)                     # Append the deregistered ID to list to give to trackers, to mark tracker as deregistered.
-                # Set the used row and col so they aren't assigned again.
+
                 usedRows.add(row)
                 usedCols.add(col)
 
             unusedRows = set(range(0, D.shape[0])).difference(usedRows) # Find existing centroids that weren't used.
-            unusedCols = set(range(0, D.shape[0])).difference(usedCols) # Find new centroids that weren't used.
+            unusedCols = set(range(0, D.shape[1])).difference(usedCols) # Find new centroids that weren't used.
 
             if D.shape[0] >= D.shape[1]:                                # If the # of old centroids >= # of new ones.
                 for row in unusedRows:                                  # Loop over unused rows.
@@ -104,12 +116,16 @@ class CentroidTracker:
                         self.deregister(objectID)                       # Deregister centroid
                         deregisteredID.append(objectID)                 # Add deregistered centroid ID to the list.
             else:
+                combined = []                                           # List of new centroid indices that are genuine new objects.
                 for col in unusedCols:                                  # Check for unused new centroids
-                    # 1. Get distance between unused new centroids and existing ones.
-                    # 2. If any new centroids are within threshold distance of existing, then associate them.
-                        # 2a. Use existing centroid as the base
-                        # 2b. Remove the assimilated centroid from input list.
-                    self.register(inputCentroids[col])                  # Register any new centroids.
+                    for row in range(D.shape[0]):                       # Check unused centroids against all existing centroids.
+                        if D[row][col] < self.minDistance:              # Check if distance is < minimum.
+                            combined.append(col)                        # Append the index to the list of combined centroids.
+                            # print("Centroid absorbed by {} at {}".format(objectIDs[row], objectCentroids[objectIDs[row]]))
+
+                for col in unusedCols:
+                    if col not in combined:                             # This centroid has not been absorbed into another.
+                        self.register(inputCentroids[col])
 
         return self.objects, deregisteredID                             # Return the set of updated centroids.
 
