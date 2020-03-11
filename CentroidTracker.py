@@ -5,7 +5,7 @@ import numpy as np
 
 class CentroidTracker:
     """ This is the constructor."""
-    def __init__(self, maxDisappeared=100, maxDistance=50):
+    def __init__(self, maxDisappeared=100, maxDistance=100):
         self.nextObjectID = 0                       # Counter for object IDs
         self.objects = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
         self.disappeared = OrderedDict()            # Centroids that are missing. Key: Unique ID, Value: # frames centroid has disappeared for.
@@ -46,12 +46,17 @@ class CentroidTracker:
             inputCentroids[i] = (cX, cY)
 
         if len(self.objects) == 0:                                      # If the number of existing centroids is zero.
+            # 1. Get distance between all new centroids.
+            # 2. If their are any centroids that are within threshold of closeness, combine them into one entity.
+                # 2a. Determine which centroid to use as the base, somehow.
+                # 2b. Remove the discarded centroid from input list.
+
             for i in range(0, len(inputCentroids)):                     # Register all centroids as new.
                 self.register(inputCentroids[i])
 
         else:                                                           # Else match new centroids with existing ones.
             objectIDs = list(self.objects.keys())                       # Extract existing centroid IDs.
-            objectCentroids = list(self.objects.values())               # Extract centroid coords.
+            objectCentroids = list(self.objects.values())               # Extract centroid co-ords.
 
 
             D = dist.cdist(np.array(objectCentroids), inputCentroids)   # D is an array of shape (# new centroids, # existing centroids) of distances. Cells are distances between centroids.
@@ -62,20 +67,22 @@ class CentroidTracker:
                                                                         # We sort the list of pairs by smallest, because we want to absolute closest pairs to be consumed first, otherwise
                                                                         # Another centroid might consume "its" closest over some other centroid who is even closer.
 
-            # Track which rows and column indexes have been examined.
-            # A set is similar to a list but contains only unique values.
-            usedRows = set()
+            usedRows = set()                                            # Tracks which pair have already been used.
             usedCols = set()
 
-            # Loop over combination of (row, cols) index tuples.
-            for (row, col) in zip(rows, cols):
-                # Ignore prexamined tuples
-                if row in usedRows or col in usedCols:
+            for (row, col) in zip(rows, cols):                          # Loop over the minimum distance pairs.
+                if row in usedRows or col in usedCols:                  # Skip an existing or new centroid if it has already been used.
                     continue
-                # For unexamined tuple
+
+                """ DEBUG """
                 objectID = objectIDs[row]                               # Get old centroid's objectID.
-                distancio = D[row][col]
-                if D[row][col] < self.maxDistance:                      # if the distance of the nearest centroid is satisfies distance thresh.
+
+                distancio = D[row][col]                                 # DEBUG: get distance between pair.
+                print("Centroid {0} found {1:5.2f} away".format(objectID, distancio))
+
+
+                if D[row][
+                    col] < self.maxDistance:                      # if the distance of the nearest centroid is satisfies distance thresh.
                     self.objects[objectID] = inputCentroids[col]        # Set the old centroid's new location to be the closest new centroid.
                     self.disappeared[objectID] = 0                      # Reset the centroid's disappeared value as its location has been updated.
                 else:
@@ -85,23 +92,23 @@ class CentroidTracker:
                 usedRows.add(row)
                 usedCols.add(col)
 
-            # Calculating which rows and columns didn't get examined
-            # Unused row,col pairs will be those values that were greates (centroids furthest away from other centroids).
-            unusedRows = set(range(0, D.shape[0])).difference(usedRows)
-            unusedCols = set(range(0, D.shape[0])).difference(usedCols)
+            unusedRows = set(range(0, D.shape[0])).difference(usedRows) # Find existing centroids that weren't used.
+            unusedCols = set(range(0, D.shape[0])).difference(usedCols) # Find new centroids that weren't used.
 
-            # If the number of existing centroids is equal or lower to the number of new ones
-            # we need to check if any centroids have disappeared.
             if D.shape[0] >= D.shape[1]:                                # If the # of old centroids >= # of new ones.
                 for row in unusedRows:                                  # Loop over unused rows.
-                    objectID = objectIDs[row]                           # Get the object ID of the unused old centroid.
+                    objectID = objectIDs[row]                           # Get the object ID of the unused existing centroid.
                     self.disappeared[objectID] += 1                     # Count that the centroid has been missing for a frame.
 
-                    if self.disappeared[objectID] > self.maxDisappeared:
-                        self.deregister(objectID)                       # If the centroid has been missing for long enough deregister it.
-                        deregisteredID.append(objectID)                 # Add the deregistered centroid to the list.
+                    if self.disappeared[objectID] > self.maxDisappeared:# If missing for > threshold
+                        self.deregister(objectID)                       # Deregister centroid
+                        deregisteredID.append(objectID)                 # Add deregistered centroid ID to the list.
             else:
-                for col in unusedCols:
+                for col in unusedCols:                                  # Check for unused new centroids
+                    # 1. Get distance between unused new centroids and existing ones.
+                    # 2. If any new centroids are within threshold distance of existing, then associate them.
+                        # 2a. Use existing centroid as the base
+                        # 2b. Remove the assimilated centroid from input list.
                     self.register(inputCentroids[col])                  # Register any new centroids.
 
         return self.objects, deregisteredID                             # Return the set of updated centroids.

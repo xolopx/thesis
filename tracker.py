@@ -197,6 +197,7 @@ def main():
 				if key == ord('n'):
 					break
 
+
 aNumber = 0
 main()
 
