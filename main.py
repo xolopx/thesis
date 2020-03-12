@@ -113,17 +113,17 @@ def train_bg_subtractor(subtractor, cap, num=500):
 
 def main():
 
-	""" SETUP """
-	subtractor = cv.createBackgroundSubtractorMOG2(history=500, detectShadows=True) 	# Keeping shadows and threshing them out later.
-	try:
-		capture = cv.VideoCapture("/home/tom/Desktop/pycharm_projects/tracker/traffic3.mp4")							# Open the input file.
+	# """ SETUP """
+	# subtractor = cv.createBackgroundSubtractorMOG2(history=500, detectShadows=True) 	# Keeping shadows and threshing them out later.
+	# try:
+	# 	capture = cv.VideoCapture("/home/tom/Desktop/pycharm_projects/tracker/traffic3.mp4")							# Open the input file.
+	#
+	# except FileNotFoundError:
+	# 	print("Could not find video")
 
-	except FileNotFoundError:
-		print("Could not find video")
-
-	train_bg_subtractor(subtractor,capture,num=500)
-	ct = CentroidTracker.CentroidTracker()								# Create the centroid tracking object.
-	trackableObjects = {}												# Dictionary of objects being tracked.
+	# train_bg_subtractor(subtractor,capture,num=500)
+	# ct = CentroidTracker.CentroidTracker()								# Create the centroid tracking object.
+	# trackableObjects = {}												# Dictionary of objects being tracked.
 
 	w = capture.get(3)													# Get the width of the frames.
 	h = capture.get(4)													# Get the height of the frames
@@ -175,10 +175,10 @@ def main():
 		mask = cv.cvtColor(mask, cv.COLOR_GRAY2RGB)			 			# Convert the binary output of the subtractor trackObj a 3 channel RGB image so it can be place in the same array as the original.
 		draw_info(
 			mask, boundRect, objects, countUp,
-			countDown,trackableObjects, frameCount)	 		 			# Draw important graphics onto mask
+			countDown,trackableObjects, frameCount)	 	 	 			# Draw important graphics onto mask
 		draw_info(
 			frame, boundRect, objects, countUp,
-			countDown, trackableObjects, frameCount) 					# Draw important graphics onto frame
+			countDown, trackableObjects, frameCount) 			 		# Draw important graphics onto frame
 
 		combined = np.hstack((frame, mask))								# Combine the original and mask intrackObj single image.
 		cv.imshow("Original", combined)	 								# Show the result.
