@@ -11,22 +11,24 @@ class CentroidTracker:
         :param maxDistance: Maximum distance a centroid can reappear and still be associated with its nearest centroid.
         :param minDistance: Minimum distance a centroid can be to another without getting associated with that centroid.
         """
+        self.deregisteredID = []                                             # List of deregistered centroids. Will be refreshed for every frame.
         self.nextObjectID = 0                       # Counter for object IDs
-        self.objects = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
+        self.centroids = OrderedDict()                # Current centroids. Key: Unique ID, Value: Centroid (x,y)
         self.disappeared = OrderedDict()            # Centroids that are missing. Key: Unique ID, Value: # frames centroid has disappeared for.
         self.maxDisappeared = maxDisappeared        # Number of frames a centroid can go missing for before being removed.
         self.maxDistance = maxDistance              # The maximum distance a centroid can reappear from it's previous and still be associated.
         self.minDistance = minDistance              # Min distance a centroid can appear near other centroid and not be associated with it.
+        self.deregisteredID = []                    # list of IDs of centroids that have disappeared into to the nether.
 
     def register(self, centroid):
         """ Registers a new centroid to be tracked."""
-        self.objects[self.nextObjectID] = centroid  # Next available unique ID is used for new centroid index in object list.
+        self.centroids[self.nextObjectID] = centroid  # Next available unique ID is used for new centroid index in object list.
         self.disappeared[self.nextObjectID] = 0     # Initially the number of times the centroid has disappeared is 0.
         self.nextObjectID += 1                      # Increment the object ID counter.
 
     def deregister(self, objectID):
-        """ Reregisters a centroid from the tracked list."""
-        del self.objects[objectID]                  # Use objecID to index centroid and remove from list.
+        """ Deregisters a centroid with ID objectID."""
+        del self.centroids[objectID]                  # Use objecID to index centroid and remove from list.
         del self.disappeared[objectID]              # Use objecID to index centroid and remove from list.
 
     def update(self, rects):
@@ -38,15 +40,14 @@ class CentroidTracker:
         @Returns:
             Updated list of centroids.
         """
-        deregisteredID = []                                             # List of deregistered centroids. Will be refreshed for every frame.
 
         if len(rects) == 0:                                             # Check to see if the list of bounding boxes is empty.
-            for objectID in list(self.disappeared.keys()):              # Loop over existing tracked objects and mark them as dissappered.
+            for objectID in list(self.disappeared.keys()):              # Loop over existing tracked centroids and mark them as dissappered.
                 self.disappeared[objectID] += 1                         # Increment all centroids lost count by 1.
                 if self.disappeared[objectID] > self.maxDisappeared:    # Check if centroid has been missing too many frames.
                     self.deregister(objectID)                           # Deregister centroid.
-                    deregisteredID.append(objectID)                     # Add to list of deregistered centroids.
-            return self.objects, deregisteredID                         # Return early because there's no new centroids to check.
+                    self.deregisteredID.append(objectID)                     # Add to list of deregistered centroids.
+            return self.centroids, self.deregisteredID                         # Return early because there's no new centroids to check.
 
         inputCentroids = np.zeros((len(rects), 2), dtype='int')         # Initialize an array of input centroids for current frame.
 
@@ -55,7 +56,7 @@ class CentroidTracker:
             cY = int((startY + (startY + height)) / 2.0)
             inputCentroids[i] = (cX, cY)
 
-        if len(self.objects) == 0:                                      # If the number of existing centroids is zero.
+        if len(self.centroids) == 0:                                      # If the number of existing centroids is zero.
 
             inputCentroidsD = dist.cdist(
                 np.array(inputCentroids), inputCentroids)               # Calculate distances between all new centroids.
@@ -73,8 +74,8 @@ class CentroidTracker:
                 self.register(inputCentroids[i])
 
         else:                                                           # Else match new centroids with existing ones.
-            objectIDs = list(self.objects.keys())                       # Extract existing centroid IDs.
-            objectCentroids = list(self.objects.values())               # Extract centroid co-ords.
+            objectIDs = list(self.centroids.keys())                       # Extract existing centroid IDs.
+            objectCentroids = list(self.centroids.values())               # Extract centroid co-ords.
 
 
             D = dist.cdist(np.array(objectCentroids), inputCentroids)   # D is an array of shape (# new centroids, # existing centroids) of distances. Cells are distances between centroids.
@@ -95,11 +96,11 @@ class CentroidTracker:
                 objectID = objectIDs[row]                               # Get old centroid's objectID.
 
                 if D[row][col] < self.maxDistance:                      # If the distance of the nearest centroid is satisfies distance thresh.
-                    self.objects[objectID] = inputCentroids[col]        # Set the old centroid's new location to be the closest new centroid.
+                    self.centroids[objectID] = inputCentroids[col]        # Set the old centroid's new location to be the closest new centroid.
                     self.disappeared[objectID] = 0                      # Reset the centroid's disappeared value as its location has been updated.
                 else:
                     self.deregister(objectID)                           # If the centoid is too far away deregister.
-                    deregisteredID.append(objectID)                     # Append the deregistered ID to list to give to trackers, to mark tracker as deregistered.
+                    self.deregisteredID.append(objectID)                     # Append the deregistered ID to list to give to trackers, to mark tracker as deregistered.
 
                 usedRows.add(row)
                 usedCols.add(col)
@@ -114,9 +115,9 @@ class CentroidTracker:
 
                     if self.disappeared[objectID] > self.maxDisappeared:# If missing for > threshold
                         self.deregister(objectID)                       # Deregister centroid
-                        deregisteredID.append(objectID)                 # Add deregistered centroid ID to the list.
+                        self.deregisteredID.append(objectID)                 # Add deregistered centroid ID to the list.
             else:
-                combined = []                                           # List of new centroid indices that are genuine new objects.
+                combined = []                                           # List of new centroid indices that are genuine new centroids.
                 for col in unusedCols:                                  # Check for unused new centroids
                     for row in range(D.shape[0]):                       # Check unused centroids against all existing centroids.
                         if D[row][col] < self.minDistance:              # Check if distance is < minimum.
@@ -127,7 +128,7 @@ class CentroidTracker:
                     if col not in combined:                             # This centroid has not been absorbed into another.
                         self.register(inputCentroids[col])
 
-        return self.objects, deregisteredID                             # Return the set of updated centroids.
+        return self.centroids, self.deregisteredID                             # Return the set of updated centroids.
 
 
 
