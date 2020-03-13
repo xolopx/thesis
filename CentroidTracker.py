@@ -5,7 +5,7 @@ import numpy as np
 
 class CentroidTracker:
 
-    def __init__(self, maxDisappeared=10, maxDistance=100, minDistance=50):
+    def __init__(self, maxDisappeared=25, maxDistance=100, minDistance=30):
         """
         :param maxDisappeared: Maximum number of frame a centroid can disappear for before being deregistered.
         :param maxDistance: Maximum distance a centroid can reappear and still be associated with its nearest centroid.

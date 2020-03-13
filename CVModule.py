@@ -17,7 +17,37 @@ def filter_frame(fgMask):
     fgMask = cv.morphologyEx(fgMask, cv.MORPH_OPEN, kernel)				# Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
     fgMask = cv.dilate(fgMask, kernel, iterations=2)					# Apply dilation trackObj bolden the foreground objects.
 
+    return fgMask
 
+
+
+
+
+def define_contours(fgMask):
+
+    contours, _ = cv.findContours(fgMask, cv.RETR_EXTERNAL,
+                              cv.CHAIN_APPROX_NONE)						# Look for contours in the foreground mask.
+
+    threshedConts = []												    # Instantiate an empty list that will hold contours that meet the threshold
+
+    # for i in range(len(contours)):			 						    # Delete contours that have a smallest area than the threshold.
+    #     if cv.contourArea(contours[i]) > self.areaThresh:
+    #         threshedConts.append(contours[i])
+
+    # contours = threshedConts		 								    # Replaced list of contours with only those that passed thresh.
+
+    contours_poly = [None] * len(contours)		 					    # Create list to hold contour polys.
+    boundRect = []		 						    # Create list to hold contour best rectangle fits.
+
+    for i, c in enumerate(contours):			 					    # Move through contours list generating enumerated pairs (indice, value).
+        # contours_poly[i] = cv.approxPolyDP(c, 3, True)	 			    # Approximate a polyform contrackObjur +/- 3
+
+        (x, y, w, h) = cv.boundingRect(c)	 		    # Generate bounding rect from the polyform contrackObjur. Returns "Upright Rectangle", i.e. Axis-aligned on bottrackObjm edge and whos eleft edge is vertical.
+        if w >= 20 and h >= 25:                                       # Thresh bounding box by width and height.
+            # boundRect[i] = cv.boundingRect(contours_poly[i])	 		# Generate bounding rect from the polyform contrackObjur. Returns "Upright Rectangle", i.e. Axis-aligned on bottrackObjm edge and whos eleft edge is vertical.
+            boundRect.append(cv.boundingRect(c)) 		# Generate bounding rect from the polyform contrackObjur. Returns "Upright Rectangle", i.e. Axis-aligned on bottrackObjm edge and whos eleft edge is vertical.
+
+    return boundRect                                                    # Return the bounding rectangles.
 
 
 class CVModule:
@@ -35,8 +65,8 @@ class CVModule:
         self.video = inputVideo                                     # Video from which to extract information.
         self.subtractor = cv.createBackgroundSubtractorMOG2(
             history=500, detectShadows=True)                        # Subtractor for procuring the input video's foreground objs.
-        self.width = self.video.get(cv.CAP_PROP_FRAME_WIDTH)     # Width of input video
-        self.height = self.video.get(cv.CAP_PROP_FRAME_HEIGHT)   # Height of input video
+        self.width = self.video.get(cv.CAP_PROP_FRAME_WIDTH)        # Width of input video
+        self.height = self.video.get(cv.CAP_PROP_FRAME_HEIGHT)      # Height of input video
         self.areaThresh = self.height*self.width/500                # Minimum area a contour must have to count as an object.
         self.countUp = 0                                            # Number of objects that have moved upward
         self.countDown = 0                                          # Number of objects that have moved downward
@@ -54,29 +84,6 @@ class CVModule:
             _, frame = self.video.read()
             self.subtractor.apply(frame, None, 0.001)
             i += 1
-
-    def define_contours(self, fgMask):
-
-        contours, _ = cv.findContours(fgMask, cv.RETR_EXTERNAL,
-                                  cv.CHAIN_APPROX_NONE)						# Look for contours in the foreground mask.
-
-        threshedConts = []												    # Instantiate an empty list that will hold contours that meet the threshold
-
-        for i in range(len(contours)):			 						    # Delete contours that have a smallest area than the threshold.
-            if cv.contourArea(contours[i]) > self.areaThresh:
-                threshedConts.append(contours[i])
-
-        contours = threshedConts		 								    # Replaced list of contours with only those that passed thresh.
-
-        contours_poly = [None] * len(contours)		 					    # Create list to hold contour polys.
-        boundRect = [None] * len(contours)		 						    # Create list to hold contour best rectangle fits.
-
-        for i, c in enumerate(contours):			 					    # Move through contours list generating enumerated pairs (indice, value).
-            contours_poly[i] = cv.approxPolyDP(c, 3, True)	 			    # Approximate a polyform contrackObjur +/- 3
-            boundRect[i] = cv.boundingRect(contours_poly[i])	 		    # Generate bounding rect from the polyform contrackObjur. Returns "Upright Rectangle", i.e. Axis-aligned on bottrackObjm edge and whos eleft edge is vertical.
-
-        return boundRect                                                    # Return the bounding rectangles.
-
 
     def draw_info(self, image, boxes):
         """
@@ -117,6 +124,21 @@ class CVModule:
 
         # Draw the number of frames
         cv.putText(image, "Frame: {}".format(self.frameCount), (280, 30),cv.FONT_HERSHEY_SIMPLEX, 0.5, (224, 9, 52, 2))
+        self.draw_grid(image)
+
+
+    def draw_grid(self,image):
+
+        across = 0
+        up = 0
+        for i in range(image.shape[0] % 50):
+            cv.line(image,(0,across),(int(self.width),across), (66, 135, 245), 1)
+            across += 50
+
+        for i in range(image.shape[1] % 50):
+            cv.line(image,(up,0),(up,int(self.height)), (66, 135, 245), 1)
+            up += 50
+
 
 
     def update_tracks(self):
@@ -134,8 +156,8 @@ class CVModule:
             else:												            # If the object does exists determine the direction it's travelling.
                 y = [c[1] for c in trackObj.centroids]			            # Look at difference between y-coord of current centroid and mean of previous centroids.
                 direction = centroid[1] - np.mean(y)			            # Get the difference.
-                trackObj.centroids.append(centroid)				            # Assign the current centroid to the trackable objects history of centroids.
-                thresh = 250
+                trackObj.centroids.append(centroid)		;		            # Assign the current centroid to the trackable objects history of centroids.
+                thresh = 250                                                # Thresh value reflect position of the counting line.
                 if not trackObj.counted : 						            # If the object hasn't been counted
                     if direction < 0 and centroid[1] < thresh:	            # If direction is up.
                         self.countUp += 1
@@ -174,9 +196,9 @@ class CVModule:
             _, frame = self.video.read()									# Read out a frame of the input video.
             mask = self.subtractor.apply(frame)							    # Apply the subtractor trackObj the frame of the image trackObj get the foreground.
 
-            filter_frame(mask)                                              # Apply morphology, threshing and median filter.
+            mask = filter_frame(mask)                                       # Apply morphology, threshing and median filter.
 
-            boundingRect = self.define_contours(mask)                       # Get the bounding boxes by locating contours in the foreground mask.
+            boundingRect = define_contours(mask)                       # Get the bounding boxes by locating contours in the foreground mask.
 
             objects, deregID = self.cenTrack.update(boundingRect)			# Update centroids by looking at the newest bounding rectangle information.
 
@@ -194,12 +216,12 @@ class CVModule:
             if self.frameCount % 1 == 0:                                    # To reduce frequency of determing object speed.
                 for objID, objs in self.objTracks.items():
                     objs.calc_speed()
-            key = cv.waitKey(20)
+            key = cv.waitKey(50)
             if key == 27:
                 break
             if key == ord('n'):
                 while True:
-                    key = cv.waitKey(20)
+                    key = cv.waitKey(50)
                     if key == ord('n'):
                         break
 
