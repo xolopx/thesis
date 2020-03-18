@@ -2,22 +2,9 @@ import TrackableObject
 import CentroidTracker
 import cv2 as cv
 import numpy as np
+import time
 
 
-def filter_frame(fgMask):
-    """
-    Applys morphology and median filtering to subtracted image to consolidate foreground objects
-    and remove salt& pepper noise.
-    :param fgMask: The foreground mask after applying subtractor
-    """
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2)) 			# General purpose kernel.
-    fgMask[fgMask < 240] = 0                                            # Threshold out shadows. (They're darker colored than pure foreground).
-    fgMask = cv.medianBlur(fgMask,5)									# Apply median blur filter trackObj remove salt and pepper noise.
-    fgMask = cv.morphologyEx(fgMask, cv.MORPH_CLOSE, kernel)			# Apply a closing trackObj join trackObjgether the surviving foreground blobs.
-    fgMask = cv.morphologyEx(fgMask, cv.MORPH_OPEN, kernel)				# Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
-    fgMask = cv.dilate(fgMask, kernel, iterations=2)					# Apply dilation trackObj bolden the foreground objects.
-
-    return fgMask
 
 
 
@@ -70,6 +57,23 @@ class CVModule:
         self.areaThresh = self.height*self.width/500                # Minimum area a contour must have to count as an object.
         self.countUp = 0                                            # Number of objects that have moved upward
         self.countDown = 0                                          # Number of objects that have moved downward
+        self.struct = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2)) 			# General purpose kernel.
+        self.totalFrames = self.video.get(cv.CAP_PROP_FRAME_COUNT)
+
+    def filter_frame(self,fgMask):
+        """
+        Applys morphology and median filtering to subtracted image to consolidate foreground objects
+        and remove salt& pepper noise.
+        :param fgMask: The foreground mask after applying subtractor
+        """
+    
+        fgMask[fgMask < 240] = 0                                            # Threshold out shadows. (They're darker colored than pure foreground).
+        fgMask = cv.medianBlur(fgMask,5)                                    # Apply median blur filter trackObj remove salt and pepper noise.
+        fgMask = cv.morphologyEx(fgMask, cv.MORPH_CLOSE, self.struct)           # Apply a closing trackObj join trackObjgether the surviving foreground blobs.
+        fgMask = cv.morphologyEx(fgMask, cv.MORPH_OPEN, self.struct)                # Apply an opening trackObj remove some of the smaller and disconnected foreground blobs.
+        fgMask = cv.dilate(fgMask, self.struct, iterations=2)                    # Apply dilation trackObj bolden the foreground objects.
+
+        return fgMask
 
 
     def train_subtractor(self, trainNum=500):
@@ -191,12 +195,13 @@ class CVModule:
 
 
         """ MAIN LOOP """
-        while True:															# Loop will execute until all input processed or user exits.
+        timeStart = time.time()
+        while True and self.frameCount < (self.totalFrames-600):															# Loop will execute until all input processed or user exits.
 
             _, frame = self.video.read()									# Read out a frame of the input video.
             mask = self.subtractor.apply(frame)							    # Apply the subtractor trackObj the frame of the image trackObj get the foreground.
 
-            mask = filter_frame(mask)                                       # Apply morphology, threshing and median filter.
+            mask = self.filter_frame(mask)                                       # Apply morphology, threshing and median filter.
 
             boundingRect = define_contours(mask)                       # Get the bounding boxes by locating contours in the foreground mask.
 
@@ -216,7 +221,7 @@ class CVModule:
             if self.frameCount % 1 == 0:                                    # To reduce frequency of determing object speed.
                 for objID, objs in self.objTracks.items():
                     objs.calc_speed()
-            key = cv.waitKey(50)
+            key = cv.waitKey(10)
             if key == 27:
                 break
             if key == ord('n'):
@@ -224,5 +229,7 @@ class CVModule:
                     key = cv.waitKey(50)
                     if key == ord('n'):
                         break
+        print("Time Elapsed: {}".format(time.time()-timeStart))
+        print("Frames Consumed: {}".format(self.frameCount))
 
 
