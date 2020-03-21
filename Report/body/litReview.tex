@@ -1,0 +1,124 @@
+\chapter{Literature Review}
+This section of the report explains the theory behind the design and implementation of the system. Digital image processing and computer vision and a broad field of study and so only concepts relevant to the system are detailed.
+
+\section{Digital Images}
+Unlike its analog predecessor the digital image consists of a discrete number of discrete valued data points, often called pixels. An image's resolution is defined by the number of pixels in the image. Each pixel's value determines its colour. This value is the pixel's \emph{intensity} and depending on the encoding of the images can be one of a range of values, for example an 8-bit image can have pixel values $[0, 255]$. 
+
+Digital images are often represented as a 2D array of values where each cell corresponds to a pixel value. In software this is how they are stored and manipulated. The image's array representation is $M\;pixels\times N\; pixels$ in size, these dimension are also an image's resolution.
+
+[ SHOW EXAMPLE ARRAY REPRESENTATION ]
+
+This representation allows pixels to be referenced by their relative position in the $M$ and $N$ directions. Furthermore, $M$ and $N$ may be substituted for something more familiar like the x and y-axis of a Cartesian plane. In fact, a digital image is just a two dimensional function. That is, each pixel's position may be described by a coordinate (x,y) where we find the pixel's value (intensity). That is, 
+
+\[z = f(x,y)\]
+
+This means that operations that can be applied to two dimensional functions can be applied to a digital image. With these operations all sorts of useful things may be done. Images can even be modelled as 3D objects as a consequence.
+
+[ SHOW ARRAY REPRESENTATION and 3D OBJECT REPRESENTATION  ]
+
+
+
+
+\section{Linear Filtering}
+
+There are many useful operations that may be applied to a digital image to augment or extract information from it. \emph{Linear filters} are a subset of these operations. They operate on a \emph{neighbourhood} of pixels in an image. The size of the neighbourhood to take as input is determined by the filter's size. 
+
+Perhaps the simplest linear filter is the weighted average filter, also known as the 'box filter'. This filter finds the weighted average of the \emph{target pixel}, where the target is the pixel at the center of the filter's array of weightings (filter coefficients). The array of coefficients is also referred to as the filter's \emph{kernel} or \emph{mask}. For example, a box filter of size three that simply outputs the average of the target pixels neighbourhood would look like this,
+
+[ SHOW BOX FILTER MASK MATRIX ]
+
+Here, the weights are evenly distributed and equal to the chosen weight divided by the sum of all weights. By passing this filter over an entire image the sharpness of the image is reduced as all the values are averages of their neighbourhood, giving a smoothing or blurring effect.
+
+[ SHOW OUTCOME OF APPLYING BOX FILTER TO IMAGE ]
+
+
+The application of a linear filter $h(u,v)$ to an entire image $f(i,j)$, where $h(0,0)$ is the center of the filter mask and $f(0,0)$ is the target pixel beneath the masks center, may be described as follows
+
+\begin{equation} \label{eq:1}
+g(i,j) = \sum_{u=-k}^{k}\sum_{v = -l}^{l}f(i+u,j+v)h(u,v)
+\end{equation}
+
+
+where the dimensions of the filter kernel are $2k+1 \times 2l+1$. Filter kernels are nearly always odd dimensioned so as to have a center. This is because an asymmetric kernel (even numbered dimensions) will result in information being distorted because the output from the filter will be weighted unevenly by being placed in a reference pixel more one to one side than another.
+
+[ SHOW RESULT OF USING ASYMMETRICAL KERNEL ] 
+
+
+
+\subsection{Correlation}
+
+Linear filtering may be notated more concisely by the \emph{correlation} operator.
+
+\[g = f \otimes h\]
+
+This operation measures the similarity between two signals (functions). We can think of both digital images and linear filters as signals. Performing correlation between them will yield an image where the highest values (pixel intensities) correspond to where the image and filter were most similar\cite{optimalKernel}.
+
+
+[ SHOW EXAMPLE WITH SHARPENING FILTER ]
+
+This operation is \emph{shift invariant}, which means that it does the same thing no matter where in an image it is applied. Therefore, correlation operations obey both the superposition principle
+
+\[a(f_1 + f_2) = af_1 + af_2\]
+
+and the shift invariance principle
+
+\[g(i,j)=f(i+k,j+l) \Leftrightarrow\ (h\circ g)(i,j)=(h\circ f)(i+k,j+l)\]
+
+This operation has the side effect of flipping both horizontally and vertically the location of output points relative to location the center point (\emph{reference point}) in the original image which may be undesirable.
+
+[ SHOW EXAMPLE OF HOW CORRELATION FLIPS INPUT FOR OUTPUT ]
+
+\subsection{Convolution}
+
+Convolution is also a linear operation that is shift invariant. It is very similar to correlation except that the output signal from a convolution operation is not flipped relative to the input signal. It is described mathematically by the expression,
+
+\[ g(i,j) = \sum_{u=-k}^{k}\sum_{v = -l}^{k}f(u,v)h(i-u,j-v)\]
+
+We see that this is similar to equation \ref{eq:1} but that the filter $h(i,j)$ is the entity being shifted, furthermore it is flipped (note the negative signs), this results in the output's orientation being correct. Convolution may be notated with the following operator
+
+\[g = f \ast h\]
+
+[ SHOW EXAMPLE OF CONVOLUTION NOT FLIPPING OUTPUT ]
+
+
+\section{Clustering}
+This is a method of separating an image in disjoint sets (clusters). This is useful as we can semantically label different sections of an image according to their similarity.
+
+[ SHOW EXAMPLE OF IMAGE SEGMENTED BY CLUSTERING ]
+
+An entity’s  (for example a pixel) membership to a cluster is justified by it meeting some criteria that along with the rest of the cluster’s members. A simple example of this is a luster defined by its location in an image, all pixels in that region would belong to that cluster. This is a very simple criteria and often more sophisticated prerequisites must be met in order to classify a pixel's cluster. Entities like pixels or a neighbourhood of pixels' characteristics are represented in something called a feature vector.
+
+
+\subsection{K-Means}
+There are many methods by which to segment an image with clustering but K-Means is very popular for its simplicity and speed. K-means produces K clusters implemented as follows
+
+    \begin{enumerate}
+    \itemsep0em
+        \item Place K points on the image randomly or with some educated guess. These points are the initial centroids for the K clusters.  
+        \item Assign all data points to their nearest centroid.
+        \item Update the centroids' positions as the mean of all data points in that class.
+        \item Repeat steps 2 and 3 until cluster centroids no longer move (converge). 
+    \end{enumerate}
+
+K-means is guided by trying to limit the variance within each class. Variance is described by the expression
+
+\begin{equation}\label{eq:2}
+   V = \sum_{i=1}^k\sum_{x_j\in c_i}(x_j-\mu_i)^2 
+\end{equation}
+
+Where {$x_j$} are the data vectors, $c_i$ are the classes that the data point belong to and $\mu_i$ are the class centroids.
+
+Because the K-Means algorithm is fast and the success of the segmentation depends on the initial placement of centroids, often the algorithm is performed many times with different initial conditions and the instance that yields the best results is used. 
+
+
+[ SHOW EXAMPLE OF K-MEANS CLUSTERING BEING USED ]
+\section{Gaussian Mixture Model}
+
+
+\section{Morphology}
+
+\section{Contours}
+
+\section{Centroid Tracking}
+
+

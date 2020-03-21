@@ -1,0 +1,46 @@
+% Yue Li, June 2017
+
+\documentclass[a4paper,12pt,twoside]{report}
+\usepackage[left=2.5cm,right=2.5cm,top=2cm,bottom=3cm]{geometry}
+
+\include{thesis.preamble}
+
+
+\begin{document}
+
+\title{Novel Classifier for Smart Traffic Network}
+
+\author{Thomas Courtney}
+\submitdate{June 2020}
+\degree{Bachelor of Computer Engineering/Computer Science}
+\studentid{3175353}
+\supervisor{Kaushik Mahata}
+
+\normallinespacing
+\maketitle
+
+% delete the two declaration sentences in thesis.sty if not applicable. 
+
+\preface
+\input{abstract/abstract}
+\input{acknowledgements/acknowledgements}
+\body
+\input{introduction/introduction}
+\input{background/background}
+
+% body of thesis comes here
+\input{body/body}
+
+\input{summary/summary}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{acm}
+\bibliography{bibliography/bibliography}
+
+
+% appendices come here
+
+\input{appendices/appendix}
+
+
+\end{document}
