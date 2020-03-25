@@ -1,27 +1,50 @@
 \chapter{Literature Review}
-This section of the report expands upon the theory behind the design of the system. Digital image processing and computer vision are a broad field of study and so only concepts relevant to the system are detailed.
+This section of the report expands upon the theory behind the design of the system. Digital image processing and computer vision are a broad fields and so only concepts relevant to this system are detailed.
 
 \section{Digital Images}
-Unlike its analog predecessor the digital image consists of a discrete number of discrete valued data points called pixels. An image's resolution is defined how many pixels are in it and a pixel's value determines its colour. This value is the pixel's \emph{intensity} and lies within a spectrum of values, for example an 8-bit image can have pixel values $[0, 255]$. 
+Unlike its analog predecessor the digital image consists of a discrete number of discrete valued data points called pixels. An image's resolution is defined how many pixels are in it and a pixel's value determines its colour. A pixel's value is also called its \emph{intensity} and lies within a spectrum of values, for example an 8-bit image can have pixel values $[0, 255]$. 
 
-Digital images are often represented as a 2D array of values where each cell corresponds to a pixel value. In software this is how digital images are stored and manipulated. The image's array is $M\;pixels\times N\; pixels$ in size. See FIGURE XXX
+Digital images are often represented as a 2D array of values where each cell corresponds to an intesnity. In software this is how digital images are stored and manipulated. The image's array is $M\;pixels\times N\; pixels$ in size. Notice that in Figure \ref{fig:2Darray}, the lowest value is 0 (black) and the highest value is 255 (white). All other color that can be represented by 8-bits are between these two values.
 
-[ SHOW EXAMPLE ARRAY REPRESENTATION ]
-
-\begin{figure}[htp]
+\begin{figure}[ht!]
     \centering
-    \includegraphics[width=5cm]{chessboard}
-    \caption{A Simple Image.}
-    \label{fig:galaxy}
+    \begin{subfigure}[b]{0.5\linewidth}
+      \centering\includegraphics[width=150pt]{chessboard}
+      \caption{\label{fig:fig1}}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.5\linewidth}
+      \centering\includegraphics[width=150pt]{array2}
+      \caption{\label{fig:fig2}}
+    \end{subfigure}
+    \caption{(\subref{fig:fig1}) A Simple 8-bit Image ~(\subref{fig:fig2}) Array Representation of Image.}
+    \label{fig:2Darray}
+
 \end{figure}
+  
 
-This representation allows pixels to be referenced by their relative position in the $M$ and $N$ directions. Furthermore, $M$ and $N$ may be substituted for something more familiar like the x and y-axis of a Cartesian plane. In fact, a digital image is just a two dimensional function. That is, each pixel's position may be described by a coordinate (x,y) where we find the pixel's value (intensity). That is, 
+The 2D array representation allows pixels to be referenced by their relative position in the $M$ and $N$ directions. Furthermore, $M$ and $N$ may be substituted for something more familiar like the x and y-axis of a Cartesian plane. In fact, a digital image is just a two dimensional function (Equation \ref{eq:2Dfunc}), where each pixel is described by a coordinate (x,y) and an intensity (z) at that point.
 
-\[z = f(x,y)\]
+\begin{equation}
+    z = f(x,y)
+    \label{eq:2Dfunc}
+\end{equation}
 
 This means that operations that can be applied to two dimensional functions can be applied to a digital image. With these operations all sorts of useful things may be done. Images can even be modelled as 3D objects as a consequence.
 
-[ SHOW ARRAY REPRESENTATION and 3D OBJECT REPRESENTATION  ]
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[b]{0.5\linewidth}
+    \centering\includegraphics[width=150pt]{example_for_3D}
+    \caption{\label{fig:fig1}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+    \centering\includegraphics[width=150pt]{array2}
+    \caption{\label{fig:fig2}}
+  \end{subfigure}
+  \caption{(\subref{fig:fig1}) Example Image by Delila Ziebart on Unsplash ~(\subref{fig:fig2}) 3D Representation of Image.}
+  \label{fig:2Darray}
+
+\end{figure}
 
 
 
