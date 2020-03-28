@@ -29,21 +29,12 @@ The 2D array representation allows pixels to be referenced by their relative pos
     \label{eq:2Dfunc}
 \end{equation}
 
-This means that operations that can be applied to two dimensional functions can be applied to a digital image. With these operations all sorts of useful things may be done. Images can even be modelled as 3D objects as a consequence.
+This means that two dimnesional operations may be applied to a digital images. As a consequence images may be modelled as 3D surfaces. This is useful when trying to visualize rates of change in an image.
 
 \begin{figure}[ht!]
   \centering
-  \begin{subfigure}[b]{0.5\linewidth}
-    \centering\includegraphics[width=150pt]{example_for_3D}
-    \caption{\label{fig:fig1}}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.5\linewidth}
-    \centering\includegraphics[width=150pt]{array2}
-    \caption{\label{fig:fig2}}
-  \end{subfigure}
-  \caption{(\subref{fig:fig1}) Example Image by Delila Ziebart on Unsplash ~(\subref{fig:fig2}) 3D Representation of Image.}
-  \label{fig:2Darray}
-
+  \centering\includegraphics[width=150pt]{3Dchess}
+  \caption{\label{fig:fig1} Surface Plot of Figure \ref{fig:fig1}\ref{sub@fig:fig1}}
 \end{figure}
 
 
@@ -51,16 +42,56 @@ This means that operations that can be applied to two dimensional functions can 
 
 \section{Linear Filtering}
 
-There are many useful operations that may be applied to a digital image to augment or extract information from it. \emph{Linear filters} are a subset of these operations. They operate on a \emph{neighbourhood} of pixels in an image. The size of the neighbourhood to take as input is determined by the filter's size. 
+Filtering an image is a way to augment or extract information from it. Linear filters are a subset of operations that operate on a neighbourhood of pixels in an image. A filter's size determines the size of the neighbourhood to take as input for the operation.
 
-Perhaps the simplest linear filter is the weighted average filter, also known as the 'box filter'. This filter finds the weighted average of the \emph{target pixel}, where the target is the pixel at the center of the filter's array of weightings (filter coefficients). The array of coefficients is also referred to as the filter's \emph{kernel} or \emph{mask}. For example, a box filter of size three that simply outputs the average of the target pixels neighbourhood would look like this,
+Linear operations are characterized by two properties,
+
+\begin{enumerate}
+  \item They are shift invariant, meaning it doesn't matter where you apply the filter to an image, its effect is consistent.
+  \item They preserve vector space operations, meaning it doesn't matter if they're applied before or after another linear operation, the result is the same.
+\end{enumerate}
+
+All linear filters operate on the same prinicpal, that is, they output a weighted average of their input. It is the weightings of a filter, known as \emph{filter coefficients}, that determine the effect of the filter. These weights are stored in a matrix called a \emph{mask} or \emph{kernel} that's then passed over the image. The mask is nearly always square so as to have a center which sits atop a reference pixel. The position of the reference pixel in the filtered image (output) will hold the result of the filter application that had that position at its center.
+
+[SHOW FILTER OVER IMAGE, NEIGHBORHOOD, CENTER PIXEL, MASK ]
+
+For example, a box filter simply outputs the average of its inputs by having all filter coefficients equal and then scaling the result by the sum of all weights. This is useful for smoothing images.
 
 [ SHOW BOX FILTER MASK MATRIX ]
+% \begin{gather}
+  \begin{equation}
+    Kernel  = \frac{1}{K_{width} \cdotp K_{height}}
+    \begin{matrix}
+    1 & 2 & 3\\
+    a & b & c
+      \end{matrix}
+  \end{equation}
+  % \begin{matrix}
+  %     % 1 & 1 & \dots & 1 & 1\\
+  %     % 1 & 1 & \dots & 1 & 1 
+  %     1 & 1 & 1
+  % \end{matrix}
+% \end{gather}
 
 Here, the weights are evenly distributed and equal to the chosen weight divided by the sum of all weights. By passing this filter over an entire image the sharpness of the image is reduced as all the values are averages of their neighbourhood, giving a smoothing or blurring effect.
 
-[ SHOW OUTCOME OF APPLYING BOX FILTER TO IMAGE ]
+[ SHOW OUTCOME OF APPLYING BOX FILTER TO IMAGE  ]
 
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[b]{0.5\linewidth}
+    \centering\includegraphics[width=150pt]{dogPug}
+    \caption{Photo by Charles Deluvio on Unsplash}
+    \label{fig:roughDog}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\linewidth}
+    \centering\includegraphics[width=150pt]{dogPug}
+    \caption{Photo by Charles Deluvio on Unsplash}
+    \label{smoothDog}
+  \end{subfigure}
+  \caption{Application of Box Filter to RGB Dog}
+  \label{fig:dogPug}
+\end{figure}
 
 The application of a linear filter $h(u,v)$ to an entire image $f(i,j)$, where $h(0,0)$ is the center of the filter mask and $f(0,0)$ is the target pixel beneath the masks center, may be described as follows
 
