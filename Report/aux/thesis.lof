@@ -2,7 +2,9 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {2.1}{\ignorespaces (\subref {fig:fig1}) A Simple 8-bit Image \nobreakspace {}(\subref {fig:fig2}) Array Representation of Image.\relax }}{4}
 \contentsline {figure}{\numberline {2.2}{\ignorespaces Surface Plot of Figure 2.2\hbox {}a\hbox {}\relax }}{4}
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Application of Box Filter to RGB Dog\relax }}{6}
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Application of a Filter Kernel to an Image\relax }}{6}
+\contentsline {figure}{\numberline {2.4}{\ignorespaces General Form of a Linear Filter\relax }}{6}
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Application of Box Filter to RGB Dog\relax }}{7}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

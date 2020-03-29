@@ -54,24 +54,31 @@ Linear operations are characterized by two properties,
 All linear filters operate on the same prinicpal, that is, they output a weighted average of their input. It is the weightings of a filter, known as \emph{filter coefficients}, that determine the effect of the filter. These weights are stored in a matrix called a \emph{mask} or \emph{kernel} that's then passed over the image. The mask is nearly always square so as to have a center which sits atop a reference pixel. The position of the reference pixel in the filtered image (output) will hold the result of the filter application that had that position at its center.
 
 [SHOW FILTER OVER IMAGE, NEIGHBORHOOD, CENTER PIXEL, MASK ]
+\begin{figure}[!ht]
+  \begin{mdframed}
+  \centering
+  \centering\includegraphics[width=350pt]{kernel_graphics}
+  \end{mdframed}
+  \caption{Application of a Filter Kernel to an Image}
+
+\end{figure}
 
 For example, a box filter simply outputs the average of its inputs by having all filter coefficients equal and then scaling the result by the sum of all weights. This is useful for smoothing images.
 
 [ SHOW BOX FILTER MASK MATRIX ]
-% \begin{gather}
-  \begin{equation}
-    Kernel  = \frac{1}{K_{width} \cdotp K_{height}}
-    \begin{matrix}
-    1 & 2 & 3\\
-    a & b & c
-      \end{matrix}
-  \end{equation}
-  % \begin{matrix}
-  %     % 1 & 1 & \dots & 1 & 1\\
-  %     % 1 & 1 & \dots & 1 & 1 
-  %     1 & 1 & 1
-  % \end{matrix}
-% \end{gather}
+\begin{figure}
+  \begin{gather}
+    Kernel  = \frac{1}{\sum\limits_{i=0}^{M}\sum\limits_{j=0}^{N}c_{i,j}}
+    \begin{bmatrix}
+      c_{0,0} & c_{0,1} & \dots & c_{0,n} \\
+      c_{1,0} & c_{1,1} & \dots & c_{1,n} \\
+      \vdots & \vdots & \ddots & \vdots \\
+      c_{m,0} & c_{m,1} & \dots & c_{m,n}
+    \end{bmatrix}
+  \end{gather}
+  \caption{General Form of a Linear Filter}
+\end{figure}
+
 
 Here, the weights are evenly distributed and equal to the chosen weight divided by the sum of all weights. By passing this filter over an entire image the sharpness of the image is reduced as all the values are averages of their neighbourhood, giving a smoothing or blurring effect.
 
@@ -87,7 +94,7 @@ Here, the weights are evenly distributed and equal to the chosen weight divided 
   \begin{subfigure}[b]{0.5\linewidth}
     \centering\includegraphics[width=150pt]{dogPug}
     \caption{Photo by Charles Deluvio on Unsplash}
-    \label{smoothDog}
+    \label{fig:smoothDog}
   \end{subfigure}
   \caption{Application of Box Filter to RGB Dog}
   \label{fig:dogPug}
